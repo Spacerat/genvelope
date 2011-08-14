@@ -67,7 +67,6 @@ app.get('/render/png', function(req, res) {
 	height =  parseInt(req.param("height"), 10) || 200;
 	pngurl = "/png/"+sha1+"w"+width+"h"+height+".png";			
 	url = encodeURI(req.param("url"));		
-	console.log(url);
 	var usecache = false;
 	try {
 		usecache = fs.statSync(PUBLICDIR+pngurl).isFile();
