@@ -66,8 +66,8 @@ app.get('/render/png', function(req, res) {
 	width = parseInt(req.param("width"), 10) || 400;
 	height =  parseInt(req.param("height"), 10) || 200;
 	pngurl = "/png/"+sha1+"w"+width+"h"+height+".png";			
-	url = req.param("url");		
-	
+	url = encodeURI(req.param("url"));		
+	console.log(url);
 	var usecache = false;
 	try {
 		usecache = fs.statSync(PUBLICDIR+pngurl).isFile();
@@ -81,10 +81,16 @@ app.get('/render/png', function(req, res) {
 	else {
 		fs.stat(wavpath, function(err) {
 			if (err && err.errno === 2) {
-				downloader.get(url, mp3path, function(err, dpath, hash, k) {
-					if (err || hash !== sha1) {
+				var dl = downloader.get(url);
+				dl.addCallback(mp3path, function(err, dpath, hash, k) {
+					if (err) {
+						console.log(err);
 						res.redirect("/images/error.gif");
-						res.end();
+						k(false);
+					}
+					else if (hash != sha1) {
+						console.log(hash, "!=", sha1);
+						res.redirect("/images/error.gif");
 						k(false);
 					}
 					else {

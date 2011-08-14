@@ -40,7 +40,6 @@ class Downloader
 			keep: false
 		})
 		return @this
-
 	constructor: (url) ->
 		@callbacks = []
 		@filehash = ""
@@ -61,11 +60,13 @@ class Downloader
 				@filehash = shasum.digest('hex')
 				file.end()
 				@runCallbacks()
-		http.get
+		getter = http.get
 			host: parsed.host
 			path: parsed.pathname + search
-			port: 80 
+			port: 80
 			onResponse
+		getter.on 'error', (err) =>
+			@runCallbacks(err)
 			
 
 ###
@@ -74,11 +75,11 @@ On download, callback is run.
 
 callback = function(filename, hash, function(keep))
 ###
-get = (url, target, callback) ->
+get = (url) ->
 	if downloaders[url]?
-		downloaders[url].addCallback(target, callback)
+		downloaders[url]
 	else
-		new Downloader(url).addCallback(target, callback)
+		new Downloader(url)
 
 ###	
 	fs.stat target, (err, stats) ->

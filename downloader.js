@@ -59,7 +59,7 @@
       return this["this"];
     };
     function Downloader(url) {
-      var onResponse, parsed, search;
+      var getter, onResponse, parsed, search;
       this.callbacks = [];
       this.filehash = "";
       this.url = url;
@@ -87,11 +87,14 @@
           return this.runCallbacks();
         }, this));
       }, this);
-      http.get({
+      getter = http.get({
         host: parsed.host,
         path: parsed.pathname + search,
         port: 80
       }, onResponse);
+      getter.on('error', __bind(function(err) {
+        return this.runCallbacks(err);
+      }, this));
     }
     return Downloader;
   })();
@@ -101,11 +104,11 @@
   
   callback = function(filename, hash, function(keep))
   */
-  get = function(url, target, callback) {
+  get = function(url) {
     if (downloaders[url] != null) {
-      return downloaders[url].addCallback(target, callback);
+      return downloaders[url];
     } else {
-      return new Downloader(url).addCallback(target, callback);
+      return new Downloader(url);
     }
   };
   /*	
