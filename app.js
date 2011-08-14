@@ -12,13 +12,17 @@ var Profile = require('./profile').Profile;
 var pump = require('util').pump;
 // Configuration
 
+var TEMPDIR = "tmp";
+var CACHEDIR = "cache";
+var PUBLICDIR = __dirname + '/public';
+
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(app.router);
-  app.use(express.static(__dirname + '/public'));
+  app.use(express.static(PUBLICDIR));
 });
 
 app.configure('development', function(){
@@ -38,7 +42,7 @@ app.get('/', function(req, res){
 });
 
 var sendWavPng = function(wavname, pngurl, width, height, res) {
-	var file = fs.createWriteStream("public"+pngurl);
+	var file = fs.createWriteStream(PUBLICDIR+pngurl);
 	file.on('open', function() {
 		audio.renderPNG(wavname, {
 			width: width,
@@ -57,8 +61,8 @@ var sendWavPng = function(wavname, pngurl, width, height, res) {
 app.get('/render/png', function(req, res) {
 	var path, sha1, url, wavpath, mp3path, width, height, pngurl;
 	sha1 = req.param("hash");
-	mp3path = "tmp/"+sha1;
-	wavpath = "cache/wav/"+sha1;
+	mp3path = TEMPDIR+"/"+sha1;
+	wavpath = CACHEDIR+"/wav/"+sha1;
 	width = parseInt(req.param("width"), 10) || 400;
 	height =  parseInt(req.param("height"), 10) || 200;
 	pngurl = "/png/"+sha1+"w"+width+"h"+height+".png";			
@@ -66,7 +70,7 @@ app.get('/render/png', function(req, res) {
 	
 	var usecache = false;
 	try {
-		usecache = fs.statSync("public"+pngurl).isFile();
+		usecache = fs.statSync(PUBLICDIR+pngurl).isFile();
 	}
 	catch (e){
 	}
@@ -98,6 +102,20 @@ app.get('/render/png', function(req, res) {
 	}
 });
 
-
+var requireDir = function(pth, mode) {
+	mode = mode || "764"
+	try {
+		stat = fs.statSync(pth);
+	}
+	catch (e) {
+		fs.mkdirSync(pth, mode);
+		console.log("Created directory "+pth);
+	}
+}
+requireDir(TEMPDIR)
+requireDir(CACHEDIR)
+requireDir(CACHEDIR+"/wav")
+requireDir(PUBLICDIR)
+requireDir(PUBLICDIR+"/png")
 app.listen(8000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
