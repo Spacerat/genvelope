@@ -66,19 +66,6 @@ var genUniqueFileID = function(path, ext) {
 	On completion, cb is called with pngurl
 	as the only argument.
 */
-var sendWavPng = function(wavname, pngurl, options, cb) {
-	var file = fs.createWriteStream(PUBLICDIR+pngurl);
-	file.on('open', function() {
-		audio.renderPNG(wavname, options, function(stream) {
-			stream.pipe(file);
-		});
-	});
-	file.on('close', function() {
-		cb(pngurl);
-	});
-
-
-}
 
 var requireDir = function(pth, mode) {
 	mode = mode || "764"
@@ -91,6 +78,69 @@ var requireDir = function(pth, mode) {
 	}
 }
 
+Outputters = {
+	png: {
+		render: function(res, input_file, options, cb) {
+			var fname = options.fname, width = options.width, height = options.height;
+			var pngurl = "/png/"+fname+"w"+width+"h"+height+".png";
+			var file = fs.createWriteStream(PUBLICDIR+pngurl);
+			file.on('open', function() {
+				audio.renderPNG(input_file, options, function(stream) {
+					stream.pipe(file);
+				});
+			});
+			file.on('close', function() {
+				res.redirect(pngurl);
+				if (cb) cb(pngurl);
+			});
+		},
+		fail: function(res, err, cb) {
+			res.redirect("/images/error.gif"); if (cb) cb();
+		},
+		useCache: function(res, options) {
+			var sha1 = options.fname, width = options.width, height = options.height;
+			var pngurl = "/png/"+sha1+"w"+width+"h"+height+".png";
+			try {
+				fs.statSync(PUBLICDIR+pngurl).isFile();
+				res.redirect(pngurl);
+				return true;
+			}
+			catch (e){
+				return false;	
+			}
+		}
+	},
+	html: {
+		fail: function(res, err, cb) {
+			res.redirect("/fail"); if (cb) cb();
+		},
+		render: function(res, input_file, options, cb) {
+			var pngid = options.fname;
+			var file = fs.createWriteStream(PUBLICDIR+"/png/"+pngid+".png");
+			file.on('open', function() {
+				audio.renderPNG(input_file, options, function(stream) {
+					stream.pipe(file);
+				});
+			});
+			file.on('close', function() {
+				res.redirect('uploaded/'+pngid);
+				if (cb) cb(pngurl);
+			});
+		},
+		useCache: function(res, options) {return false;}
+	},
+	tryDecode: function(res, format, input_file, wavpath, options, callback) {
+		audio.decodemp3(input_file, wavpath, function(cpath) {
+			if (!cpath) {
+				Outputters[format].fail(res, callback);
+			}
+			else {
+				Outputters[format].render(res, cpath, options, callback);
+			}
+		});
+	}
+}
+
 // Routes
 
 app.get('/', function(req, res){
@@ -99,10 +149,18 @@ app.get('/', function(req, res){
   });
 });
 app.get('/uploaded/:id', function(req, res) {
-	res.render('uploaded', {
-		title: req.params.id + " - Genvelope",
-		imgid: req.params.id
+	fs.stat(PUBLICDIR+'/png/'+req.params.id+".png", function(err, stat) {
+		if (stat && stat.isFile()) {
+			res.render('uploaded', {
+				title: req.params.id + " - Genvelope",
+				imgid: req.params.id
+			});
+		}
+		else {
+			res.redirect("/fail");
+		}
 	});
+	
 });
 app.get('/fail', function(req, res) {
 	res.render('fail', {
@@ -110,93 +168,60 @@ app.get('/fail', function(req, res) {
 	});
 });
 
-
-app.post('/render/png', function(req, res) {
+app.post('/render/:format', function(req, res) {
 	var width, height;
-	
-	
 	var form = new formidable.IncomingForm();
+	var format = req.params.format;
 	form.parse(req, function(err, fields, files) {
-		width = parseInt(fields.width, 10) || 400;
-		height = parseInt(fields.height, 10) || 200;
 		if (files.file == undefined) {
-			res.redirect("/fail");
+			Outputters[format].fail(res);
+		}
+		else {
+			options = {
+				width: parseInt(fields.width, 10) || 400,
+				height: parseInt(fields.height, 10) || 200,
+				fname: genUniqueFileID("public/png/", ".png")
+			}
+			Outputters.tryDecode(res, format, files.file.path, files.file.path+".wav", options);
 		}
 	});
-	form.on('file', function(name, file) {
-		audio.decodemp3(file.path, file.path+".wav", function(cpath) {
-			console.log(cpath);
-			if (!cpath) {
-				res.redirect("/fail");
-				return;
-			}
-			var pngurl = genUniqueFileID("public/png/", ".png");
-			sendWavPng(cpath, "/png/"+pngurl+".png", {width: width, height:height}, function() {
-				res.redirect("/uploaded/"+pngurl)
-			});
-			
-		});
-	});
-	/*
-	res.pipe(tempfile);
-	tempfile.on('close', function() {
-		audio.decodemp3(tempfile, wavpath, function(cpath) {
-			var pngurl = genUniqueFile("public/png", ".png");
-			sendWavPng(cpath, pngurl.slice(6), width, height, res);
-		});
-	});
-	*/
 });
 
-app.get('/render/png', function(req, res) {
-	var path, sha1, url, wavpath, mp3path, width, height, pngurl;
+app.get('/render/:format', function(req, res) {
+	var path, sha1, url, wavpath, mp3path, width, height, pngurl, format, options;
 	sha1 = req.param("hash");
 	mp3path = TEMPDIR+"/"+sha1;
 	wavpath = CACHEDIR+"/wav/"+sha1;
 	width = parseInt(req.param("width"), 10) || 400;
 	height =  parseInt(req.param("height"), 10) || 200;
-	pngurl = "/png/"+sha1+"w"+width+"h"+height+".png";			
-	url = encodeURI(req.param("url"));		
-	var usecache = false;
-	try {
-		usecache = fs.statSync(PUBLICDIR+pngurl).isFile();
+	format = req.params.format;
+	url = encodeURI(req.param("url"));
+	options = {
+		width: width,
+		height: height,
+		fname: sha1
 	}
-	catch (e){
-	}
-	
-	if (usecache) {
-		res.redirect(pngurl);
-	}
-	else {
+	if (Outputters[format].useCache(res, options)) return;
+	var errorfunc, successfunc;
 		fs.stat(wavpath, function(err) {
-			if (err && err.errno === 2) {
-				var dl = downloader.get(url);
-				dl.addCallback(mp3path, function(err, dpath, hash, k) {
-					if (err) {
-						console.log(err);
-						res.redirect("/images/error.gif");
-						k(false);
-					}
-					else if (hash != sha1) {
-						console.log(hash, "!=", sha1);
-						res.redirect("/images/error.gif");
-						k(false);
-					}
-					else {
-						audio.decodemp3(dpath, wavpath, function(cpath) {
-							k(false);
-							sendWavPng(cpath, pngurl, width, height, res.redirect);
-						});
-					}
-				});
-			}
-			else {
-				sendWavPng(wavpath, pngurl, {width: width, height:height}, function() {
-					res.redirect(pngurl);
-				});
-			}
-		});
-	}
+		if (err && err.errno === 2) {
+			var dl = downloader.get(url);
+			dl.addCallback(mp3path, function(err, dpath, hash, k) {
+				if (!err && hash != hash) err = {message: "Incompatible hashes", code: 12345}
+				if (err) {
+					Outputters[format].fail(res, err);
+					k(false);
+				}
+				else {
+					Outputters.tryDecode(res, format, dpath, wavpath,options, function() {k(false);})
+				}
+			});
+		}
+		else {
+			Outputters[format].render(res, wavpath, options);
+		}
+	});
+	
 });
 
 
@@ -205,6 +230,8 @@ requireDir(CACHEDIR);
 requireDir(CACHEDIR+"/wav");
 requireDir(PUBLICDIR);
 requireDir(PUBLICDIR+"/png");
+downloader.setTempDir(TEMPDIR);
+
 fs.readFile("domain", "ascii", function(err, data) {
 	if (!err) DOMAIN = data.replace(/^\s+|\s+$/g, '');
 	app.set('view options', {

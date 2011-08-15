@@ -5,7 +5,7 @@ pathlib = require("path")
 fs = require "fs"
 
 downloaders = {}
-
+TEMPDIR = "/tmp"
 copyFile = (from, to, cb) ->
 	read = fs.createReadStream(from)
 	write = fs.createWriteStream(to)
@@ -48,7 +48,7 @@ class Downloader
 		downloaders[url] = this
 		parsed = parse(url)
 		search = if parsed.search? then parsed.search else ""
-		@tempname = "tmp/"+Math.random()+pathlib.basename(parsed.pathname)+".temp"
+		@tempname = TEMPDIR+"/"+Math.random()+pathlib.basename(parsed.pathname)+".temp"
 		
 		onResponse = (res) =>
 			shasum = crypto.createHash('sha1')
@@ -91,6 +91,5 @@ get = (url) ->
 	return null
 ###
 exports.get = get
-
-
+exports.setTempDir = (dir) -> TEMPDIR = dir
 

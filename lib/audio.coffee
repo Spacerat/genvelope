@@ -15,16 +15,18 @@ decoders = {}
 decodemp3 = (inputname, outputname, callback) ->
 	decoder = decoders[inputname]
 	onFinish = (fname) ->
-		callback(null) if not fname? 
-		fs.stat fname, (err, stat) ->
-			if (err)
-				callback(null)
-			else
-				if stat.size < 50
+		if not fname
+			callback(null) 
+		else
+			fs.stat fname, (err, stat) ->
+				if (err)
 					callback(null)
 				else
-					callback(fname)
-			delete decoders[inputname] if decoders[inputname]?
+					if stat.size < 50
+						callback(null)
+					else
+						callback(fname)
+		delete decoders[inputname] if decoders[inputname]?
 
 	if decoder?
 		decoder.proc.once 'exit', (code, signal) ->

@@ -1,5 +1,5 @@
 (function() {
-  var Downloader, copyFile, crypto, downloaders, fs, get, http, parse, pathlib;
+  var Downloader, TEMPDIR, copyFile, crypto, downloaders, fs, get, http, parse, pathlib;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -12,6 +12,7 @@
   pathlib = require("path");
   fs = require("fs");
   downloaders = {};
+  TEMPDIR = "/tmp";
   copyFile = function(from, to, cb) {
     var read, write;
     read = fs.createReadStream(from);
@@ -69,7 +70,7 @@
       downloaders[url] = this;
       parsed = parse(url);
       search = parsed.search != null ? parsed.search : "";
-      this.tempname = "tmp/" + Math.random() + pathlib.basename(parsed.pathname) + ".temp";
+      this.tempname = TEMPDIR + "/" + Math.random() + pathlib.basename(parsed.pathname) + ".temp";
       onResponse = __bind(function(res) {
         var file, shasum;
         shasum = crypto.createHash('sha1');
@@ -121,4 +122,7 @@
   	return null
   */
   exports.get = get;
+  exports.setTempDir = function(dir) {
+    return TEMPDIR = dir;
+  };
 }).call(this);

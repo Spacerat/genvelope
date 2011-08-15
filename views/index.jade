@@ -1,15 +1,15 @@
 h1= title
-p Genvelope is an API and tool for creating images out of the waveforms of MP3 tracks.
+p Genvelope is a simple API and tool for creating images out of the waveforms of MP3 tracks.
 h2 Examples
 .example
-	img.waveform(src="/render/png?url=http%3A%2F%2Fspacerat.meteornet.net%2Fmusic%2FHarris.mp3&amp;hash=87a79ece3bf3d5eb957ac7748edc435d78d41dbf&amp;width=398&amp;height=200")
+	img.waveform(width="398",height="200",src="/render/png?url=http%3A%2F%2Fspacerat.meteornet.net%2Fmusic%2FHarris.mp3&amp;hash=87a79ece3bf3d5eb957ac7748edc435d78d41dbf&amp;width=398&amp;height=200")
 	a(target='_blank', href="http://spacerat.meteornet.net/music/Harris.mp3") Harris
 .example
-	img.waveform(src="/render/png?url=http%3A%2F%2Fspacerat.meteornet.net%2Fmusic%2FReasonDnB.mp3&amp;hash=8e55c94acadf8c4a4d617f9eb62e48866245373f&amp;width=398&amp;height=200")
+	img.waveform(width="398",height="200",src="/render/png?url=http%3A%2F%2Fspacerat.meteornet.net%2Fmusic%2FReasonDnB.mp3&amp;hash=8e55c94acadf8c4a4d617f9eb62e48866245373f&amp;width=398&amp;height=200")
 	a(target='_blank', href="http://spacerat.meteornet.net/music/ReasonDnB.mp3") ReasonDnB
 
 h2 Create
-form(method="post", action='render/png', enctype="multipart/form-data‎")
+form(method="post", action='render/html', enctype="multipart/form-data‎")
 	fieldset
 		legend Generate new envelope
 		input#fwidth(type="number", name="width", value="800")
@@ -21,34 +21,28 @@ form(method="post", action='render/png', enctype="multipart/form-data‎")
 		input(type="file", name="file")
 		br
 		input(type="submit", value="Send")
-		
-h2 API
 div
-	h3 GET /render/png
-	h4 parameters
-	ul
-		li
-			strong="url - " 
-			span URL of an mp3 file to be downloaded by the server
-		li
-			strong="hash - "
-			span sha1 hash of the file pointed to by the url parameter
-		li
-			strong="[width] - " 
-			span optional, width of image
-		li
-			strong="[height] - " 
-			span optional, height of image
-div
-	h3 POST /render/png
-	h4 parameters
-	ul
-		li
-			strong="BODY - " 
-			span file data in the multipart/form-data body
-		li
-			strong="[width] - " 
-			span optional, width of image
-		li
-			strong="[height] - " 
-			span optional, height of image
+	h2 API
+	:markdown
+		### GET /render/:format
+		#### Parameters
+		*	**format** - "html" or "png"
+		*	**url** - URL of an mp3 file to be downloaded by the server
+		*	**hash** sha1 ash of the filepointed to by the url paramter
+		*	**[width=400]** - optional, width of image
+		*	**[height=200]** - optional, height of image
+
+		### POST /render/:format
+		#### Body parameters
+		*	**format** - "html" or "png"
+		*	**file** - file data in the multipart/form-data body
+		*	**[width=400]** - optional, width of image
+		*	**[height=200]** - optional, height of image
+	
+		### Format parameter
+		With format set to &quot;png&quot;, the result of the call is a 
+		HTTP redirect to the rendered image file.
+
+		With format set to &quot;html&quot;, the result of the call is a
+		HTTP redirect to a Successfully Uploaded Image page, which contains
+		a link to the image in an img tag.

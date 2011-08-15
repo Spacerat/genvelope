@@ -20,23 +20,24 @@
     var decoder, onFinish, proc;
     decoder = decoders[inputname];
     onFinish = function(fname) {
-      if (!(fname != null)) {
+      if (!fname) {
         callback(null);
-      }
-      return fs.stat(fname, function(err, stat) {
-        if (err) {
-          callback(null);
-        } else {
-          if (stat.size < 50) {
-            callback(null);
+      } else {
+        fs.stat(fname, function(err, stat) {
+          if (err) {
+            return callback(null);
           } else {
-            callback(fname);
+            if (stat.size < 50) {
+              return callback(null);
+            } else {
+              return callback(fname);
+            }
           }
-        }
-        if (decoders[inputname] != null) {
-          return delete decoders[inputname];
-        }
-      });
+        });
+      }
+      if (decoders[inputname] != null) {
+        return delete decoders[inputname];
+      }
     };
     if (decoder != null) {
       return decoder.proc.once('exit', function(code, signal) {
@@ -57,7 +58,6 @@
         output: outputname
       };
       return proc.once('exit', function(code, signal) {
-        console.log(code, signal);
         if (code === 0) {
           return onFinish(outputname);
         } else {
