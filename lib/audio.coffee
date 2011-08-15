@@ -14,26 +14,34 @@ decoders = {}
 
 decodemp3 = (inputname, outputname, callback) ->
 	decoder = decoders[inputname]
-	onFinish = ->
-		callback(outputname)
-		delete decoders[inputname] if decoders[inputname]?
+	onFinish = (fname) ->
+		callback(null) if not fname? 
+		fs.stat fname, (err, stat) ->
+			if (err)
+				callback(null)
+			else
+				if stat.size < 50
+					callback(null)
+				else
+					callback(fname)
+			delete decoders[inputname] if decoders[inputname]?
 
 	if decoder?
 		decoder.proc.once 'exit', (code, signal) ->
 			if code == 0 and decoder.output == outputname
-				callback(outputname)
+				onFinish(outputname)
 			else if code == 0
-				copyFile decoder.output, outputname, onFinish
+				copyFile decoder.output, outputname, -> onFinish(outputname)
 			else
-				callback(false)
+				callback(null)
 	else
-		proc = spawn('mpg123', ['-t2m', '--8bit', '--wav', outputname, inputname])
+		proc = spawn('mpg123', ['-4m', '--8bit', '--wav', outputname, inputname])
 		decoder = decoders[inputname] = {proc: proc, output: outputname}
 		proc.once 'exit', (code, signal) ->
 			if code == 0
-				onFinish()
+				onFinish(outputname)
 			else
-				callback(false)
+				onFinish(false)
 		#file = fs.createWriteStream(outputname)
 		#require('util').pump(proc.stdout, file)
 

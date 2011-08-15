@@ -1,8 +1,47 @@
 body {
-  padding: 50px;
+  padding: 0px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: #EEE;
+  background-color: #272222;
 }
 
+h1 {
+	text-align: center;
+}
+
+#main {
+	width: 800px;
+	margin: auto;
+}
 a {
   color: #00B7FF;
+}
+fieldset {
+	border-color: #444;
+}
+
+
+.waveform {
+	border: thin black solid;
+	background-color: #404048;
+	
+}
+input[type=file] {
+	background-color: white;
+}
+.example {
+	position: relative;
+	display: inline-block;
+}
+.example a {
+	position: absolute;
+	left: 30px;
+	top: 30px;
+	font-size: 40px;
+	background-color: rgba(0,0,0,0.6);
+}
+.uploaded {
+	overflow: scroll;
+	overflow-y: auto;
+	width: 800px;
 }

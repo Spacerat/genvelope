@@ -19,33 +19,49 @@
   decodemp3 = function(inputname, outputname, callback) {
     var decoder, onFinish, proc;
     decoder = decoders[inputname];
-    onFinish = function() {
-      callback(outputname);
-      if (decoders[inputname] != null) {
-        return delete decoders[inputname];
+    onFinish = function(fname) {
+      if (!(fname != null)) {
+        callback(null);
       }
+      return fs.stat(fname, function(err, stat) {
+        if (err) {
+          callback(null);
+        } else {
+          if (stat.size < 50) {
+            callback(null);
+          } else {
+            callback(fname);
+          }
+        }
+        if (decoders[inputname] != null) {
+          return delete decoders[inputname];
+        }
+      });
     };
     if (decoder != null) {
       return decoder.proc.once('exit', function(code, signal) {
         if (code === 0 && decoder.output === outputname) {
-          return callback(outputname);
+          return onFinish(outputname);
         } else if (code === 0) {
-          return copyFile(decoder.output, outputname, onFinish);
+          return copyFile(decoder.output, outputname, function() {
+            return onFinish(outputname);
+          });
         } else {
-          return callback(false);
+          return callback(null);
         }
       });
     } else {
-      proc = spawn('mpg123', ['-t2m', '--8bit', '--wav', outputname, inputname]);
+      proc = spawn('mpg123', ['-4m', '--8bit', '--wav', outputname, inputname]);
       decoder = decoders[inputname] = {
         proc: proc,
         output: outputname
       };
       return proc.once('exit', function(code, signal) {
+        console.log(code, signal);
         if (code === 0) {
-          return onFinish();
+          return onFinish(outputname);
         } else {
-          return callback(false);
+          return onFinish(false);
         }
       });
     }
