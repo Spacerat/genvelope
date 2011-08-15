@@ -37,11 +37,11 @@
             keep_paths.push(callback.path);
             copyFile(this.tempname, callback.path, __bind(function(cperr) {
               if (returned === this.callbacks.length) {
-                return fs.unlink(this.tempname);
+                return console.log(this.tempname);
               }
             }, this));
           } else if (returned === this.callbacks.length && keep_paths.length === 0) {
-            fs.unlink(this.tempname);
+            console.log(this.tempname);
           }
           return null;
         }, this));

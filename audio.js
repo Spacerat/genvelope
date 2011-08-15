@@ -20,14 +20,20 @@
     decoder = decoders[inputname];
     onFinish = function(fname) {
       if (!fname) {
-        callback(null);
+        callback(null, {
+          message: "Failed to decode file (1)."
+        });
+        fs.rename(outputname, outputname + "_fail");
       } else {
         fs.stat(fname, function(err, stat) {
           if (err) {
-            return callback(null);
+            return callback(null, err);
           } else {
             if (stat.size < 50) {
-              return callback(null);
+              callback(null, {
+                message: "Failed to decode file (0)."
+              });
+              return fs.rename(outputname, outputname + "_fail");
             } else {
               return callback(fname);
             }
@@ -51,7 +57,7 @@
         }
       });
     } else {
-      proc = spawn('mpg123', ['-4m', '--8bit', '--wav', outputname, inputname]);
+      proc = spawn('mpg123', ['-2m', '--8bit', '--wav', outputname, inputname]);
       decoder = decoders[inputname] = {
         proc: proc,
         output: outputname

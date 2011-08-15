@@ -11,7 +11,7 @@ copyFile = (from, to, cb) ->
 	write = fs.createWriteStream(to)
 	write.once 'open', (fd)->
 		require('util').pump(read, write, cb)
-
+#http://localhost:8000/render/html?url=http%3A%2F%2Fspacerat.meteornet.net%2Fmusic%2FThomas%20Time.mp3&hash=4f63f0b61f81e06775e86f9cd87d000172ca8f5d&width=300&height=100
 class Downloader
 	runCallbacks: (err) ->
 		keep_paths = []
@@ -24,9 +24,11 @@ class Downloader
 					keep_paths.push(callback.path)
 					copyFile @tempname, callback.path, (cperr) =>
 						if returned == @callbacks.length
-							fs.unlink(@tempname)
+							#fs.unlink(@tempname)
+							console.log(@tempname)
 				else if returned == @callbacks.length and keep_paths.length == 0
-					fs.unlink(@tempname)
+					#fs.unlink(@tempname)
+					console.log(@tempname)
 				
 				
 				return null

@@ -89,11 +89,12 @@ Outputters = {
 				});
 			});
 			file.on('close', function() {
-				res.redirect(pngurl);
+				res.redirect(pngurl, 307);
 				if (cb) cb(pngurl);
 			});
 		},
 		fail: function(res, err, cb) {
+			console.error(err);
 			res.redirect("/images/error.gif"); if (cb) cb();
 		},
 		useCache: function(res, options) {
@@ -111,7 +112,10 @@ Outputters = {
 	},
 	html: {
 		fail: function(res, err, cb) {
-			res.redirect("/fail"); if (cb) cb();
+			console.error(err);
+			if (err && err.message) res.redirect("/fail?message="+encodeURIComponent(err.message));
+			else res.redirect("/fail");
+			if (cb) cb();
 		},
 		render: function(res, input_file, options, cb) {
 			var pngid = options.fname;
@@ -123,15 +127,15 @@ Outputters = {
 			});
 			file.on('close', function() {
 				res.redirect('uploaded/'+pngid);
-				if (cb) cb(pngurl);
+				if (cb) cb(pngid);
 			});
 		},
 		useCache: function(res, options) {return false;}
 	},
 	tryDecode: function(res, format, input_file, wavpath, options, callback) {
-		audio.decodemp3(input_file, wavpath, function(cpath) {
+		audio.decodemp3(input_file, wavpath, function(cpath, err) {
 			if (!cpath) {
-				Outputters[format].fail(res, callback);
+				Outputters[format].fail(res, err, callback);
 			}
 			else {
 				Outputters[format].render(res, cpath, options, callback);
@@ -156,14 +160,15 @@ app.get('/uploaded/:id', function(req, res) {
 			});
 		}
 		else {
-			res.redirect("/fail");
+			res.redirect("/fail?message=File%20does%20not%20exist.");
 		}
 	});
 	
 });
 app.get('/fail', function(req, res) {
 	res.render('fail', {
-		title: 'Upload failed - Genvelope'
+		title: 'Upload failed - Genvelope',
+		message: req.param('message')
 	});
 });
 
@@ -173,7 +178,8 @@ app.post('/render/:format', function(req, res) {
 	var format = req.params.format;
 	form.parse(req, function(err, fields, files) {
 		if (files.file == undefined) {
-			Outputters[format].fail(res);
+			err = {message: "Please choose a file"}
+			Outputters[format].fail(res, err);
 		}
 		else {
 			options = {
@@ -209,10 +215,11 @@ app.get('/render/:format', function(req, res) {
 				if (!err && hash != hash) err = {message: "Incompatible hashes", code: 12345}
 				if (err) {
 					Outputters[format].fail(res, err);
-					k(false);
+					k(true);
 				}
 				else {
 					Outputters.tryDecode(res, format, dpath, wavpath,options, function() {k(false);})
+					k(false);
 				}
 			});
 		}

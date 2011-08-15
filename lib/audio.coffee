@@ -15,14 +15,16 @@ decodemp3 = (inputname, outputname, callback) ->
 	decoder = decoders[inputname]
 	onFinish = (fname) ->
 		if not fname
-			callback(null) 
+			callback(null, {message: "Failed to decode file (1)."})
+			fs.rename(outputname, outputname+"_fail")
 		else
 			fs.stat fname, (err, stat) ->
 				if (err)
-					callback(null)
+					callback(null, err)
 				else
 					if stat.size < 50
-						callback(null)
+						callback(null, {message: "Failed to decode file (0)."})
+						fs.rename(outputname, outputname+"_fail")
 					else
 						callback(fname)
 		delete decoders[inputname] if decoders[inputname]?
@@ -36,7 +38,7 @@ decodemp3 = (inputname, outputname, callback) ->
 			else
 				callback(null)
 	else
-		proc = spawn('mpg123', ['-4m', '--8bit', '--wav', outputname, inputname])
+		proc = spawn('mpg123', ['-2m', '--8bit', '--wav', outputname, inputname])
 		decoder = decoders[inputname] = {proc: proc, output: outputname}
 		proc.once 'exit', (code, signal) ->
 			if code == 0
