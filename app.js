@@ -7,7 +7,6 @@ var fs = require("fs");
 var express = require('express');
 var downloader = require('./downloader');
 var audio = require('./audio');
-var Profile = require('./profile').Profile;
 var pump = require('util').pump;
 var formidable = require('formidable');
 var app = module.exports = express.createServer();

@@ -1,9 +1,8 @@
 (function() {
-  var Canvas, Profile, copyFile, decodemp3, decoders, fs, renderPNG, spawn;
+  var Canvas, copyFile, decodemp3, decoders, fs, renderPNG, spawn;
   spawn = require('child_process').spawn;
   fs = require("fs");
   Canvas = require('canvas');
-  Profile = require('./profile').Profile;
   copyFile = function(from, to, cb) {
     var read, write;
     if (from === to) {

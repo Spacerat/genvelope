@@ -1,7 +1,6 @@
 spawn = require('child_process').spawn
 fs = require "fs"
 Canvas = require('canvas')
-Profile = require('./profile').Profile
 
 copyFile = (from, to, cb) ->
 	if from == to then cb()
