@@ -2,7 +2,7 @@ body {
   padding: 0px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
   color: #EEE;
-  background-color: #272222;
+  background-color: #373232;
 }
 
 h1 {
@@ -17,7 +17,7 @@ a {
   color: #00B7FF;
 }
 fieldset {
-	border-color: #444;
+	border-color: #555;
 }
 
 
