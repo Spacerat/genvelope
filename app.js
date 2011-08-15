@@ -212,7 +212,7 @@ app.get('/render/:format', function(req, res) {
 		if (err && err.errno === 2) {
 			var dl = downloader.get(url);
 			dl.addCallback(mp3path, function(err, dpath, hash, k) {
-				if (!err && hash != hash) err = {message: "Incompatible hashes", code: 12345}
+				if (!err && hash != sha1) err = {message: "Provided hash does not match calculated sha1 value.", code: 12345}
 				if (err) {
 					Outputters[format].fail(res, err);
 					k(true);
