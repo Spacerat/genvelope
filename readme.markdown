@@ -1,4 +1,5 @@
-#Genvelope
+# Genvelope
+
 ...is a simple API and tool for creating images out of the waveforms of MP3 tracks.
 
 ## Dependencies 
